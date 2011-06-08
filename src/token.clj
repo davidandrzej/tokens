@@ -9,8 +9,8 @@
 (def stopfile "english.stop")
 
 ;; *opennlp-tokenizer* must be bound to return value of get-tokenizer
-(def *opennlp-tokenizer* {})
-;; Similar to *opennlp-tokenizer* but optional
+(def *opennlp-tokenizer* nil)
+;; ;; Similar to *opennlp-tokenizer* but optional
 (def *opennlp-stoplist* {})
 
 (def whitespace-re #"\s+")
@@ -18,20 +18,21 @@
 (defn de-punc
   "Replace punc with whitespace, then split on whitespace"
   [tok]
-  (-> tok
-      (str/replace ,,, punc-re " ")
+  (-> tok (str/replace ,,, punc-re " ")
       (str/split ,,, whitespace-re)))
          
 (defn accept-tok?
   "Is this a valid token?"
-  [tok]
-  (not (or (str/blank? tok) (contains? *opennlp-stoplist* tok))))
+  [stoplist tok]
+  (not (or (str/blank? tok)
+           (contains? stoplist tok))))
 
 (defn process-token
   "Process a single token: de-punc, stop filter, downcase"
   [tok]
-  (->> tok str/lower-case de-punc (filter accept-tok?)))
-
+  (->> tok str/lower-case de-punc
+       (filter (partial accept-tok? *opennlp-stoplist*))))
+                                                   
 (defn process-text
   "Process a text string using tokenizer and process-token"
   [doctxt]
@@ -51,20 +52,19 @@
      (get-stoplist
       (.getResourceAsStream (clojure.lang.RT/baseLoader) stopfile)))
   ([filestream]
-     (set (mapcat process-token (read-lines filestream)))))                  
-
+     (->> (read-lines filestream) (mapcat de-punc) set)))
+          
 (defn get-tokenizer
   "Instantiate OpenNLP tokenizer"
   ([]
-     (get-tokenizer
-      (.getResourceAsStream
-       (clojure.lang.RT/baseLoader) tokfile)))
+     (get-tokenizer (.getResourceAsStream
+                     (clojure.lang.RT/baseLoader) tokfile)))
   ([filestream]
      (make-tokenizer filestream)))
 
 (defmacro with-token
   "Convenience macro to simultaneously bind stoplist and tokenizer"
   [& body]  
-  `(binding [*opennlp-tokenizer* (get-tokenizer)
-             *opennlp-stoplist* (get-stoplist)]
+  `(binding [*opennlp-stoplist* (get-stoplist)
+             *opennlp-tokenizer* (get-tokenizer)]
      ~@body))

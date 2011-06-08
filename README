@@ -1,13 +1,22 @@
 # token
 
-FIXME: write description
+Really (really) basic text processing: 
+ OpenNLP tokenization -> de-punc -> downcase -> stoplist
+
+This code uses the OpenNLP tokenization model and a reasonable English
+stoplist from the Journal of Machine Learning Research (JMLR).
 
 ## Usage
 
-FIXME: write
+After fetching the tokenization model and stoplist with
+resources/getmodels.sh, processing text should be pretty easy
+
+(with-token 
+ (doseq [tok (process-text "Boo far Baz said the the (catdog)")]
+   (println tok)))
 
 ## License
 
-Copyright (C) 2011 FIXME
+Copyright (C) 2011 David Andrzejewski
 
 Distributed under the Eclipse Public License, the same as Clojure.
