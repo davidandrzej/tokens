@@ -1,22 +1,33 @@
 # token
 
 Really (really) basic text processing: 
- OpenNLP tokenization -> de-punc -> downcase -> stoplist
+ OpenNLP tokenization -> downcase -> de-punc -> stoplist
 
-This code uses the OpenNLP tokenization model and a reasonable English
-stoplist from the Journal of Machine Learning Research (JMLR).
+This code uses OpenNLP tokenization provided by clojure-opennlp.  The
+default stoplist is a reasonable English stoplist from a publication
+that appeared in the Journal of Machine Learning Research (JMLR):
+
+David D. Lewis, Yiming Yang, Tony G. Rose, and Fan Li. 2004. RCV1: A
+New Benchmark Collection for Text Categorization
+Research. J. Mach. Learn. Res. 5 (December 2004), 361-397.
 
 ## Usage
 
 After fetching the tokenization model and stoplist with
 resources/getmodels.sh, processing text should be pretty easy
 
-(with-token 
+(with-token ;; This macro handles stoplist and Tokenizer bindings
  (doseq [tok (process-text "Boo far Baz said the the (catdog)")]
    (println tok)))
 
+
+The process-text function can also hanlde arbitrarily nested
+collections of strings:
+
+(process-text [["why-are" [["these"]] "STRINGS!?"] "Nested,so oddly?"])
+
 ## License
 
-Copyright (C) 2011 David Andrzejewski
+Copyright (C) 2011 David Andrzejewski (andrzejewski1@llnl.gov)
 
 Distributed under the Eclipse Public License, the same as Clojure.
