@@ -8,40 +8,57 @@
 (def tokfile "en-token.bin")
 (def stopfile "english.stop")
 
-;; *opennlp-tokenizer* must be bound to return value of get-tokenizer
+;; *opennlp-tokenizer* must be bound to an OpenNLP Tokenizer, while
+;; *opennlp-stoplist* is optional
 (def *opennlp-tokenizer* nil)
-;; ;; Similar to *opennlp-tokenizer* but optional
 (def *opennlp-stoplist* {})
 
+;;
+;; Helper functions
+;;
 (def whitespace-re #"\s+")
 (def punc-re #"\W+")
-(defn de-punc
+(defn- de-punc
   "Replace punc with whitespace, then split on whitespace"
   [tok]
   (-> tok (str/replace ,,, punc-re " ")
       (str/split ,,, whitespace-re)))
          
-(defn accept-tok?
+(defn- accept-tok?
   "Is this a valid token?"
   [stoplist tok]
   (not (or (str/blank? tok)
            (contains? stoplist tok))))
 
-(defn process-token
+(defn- process-token
   "Process a single token: de-punc, stop filter, downcase"
   [tok]
   (->> tok str/lower-case de-punc
        (filter (partial accept-tok? *opennlp-stoplist*))))
-                                                   
-(defn process-text
-  "Process a text string using tokenizer and process-token"
-  [doctxt]
-  (->> doctxt *opennlp-tokenizer* (mapcat process-token)))
+
+;;
+;; process-text is the primary function
+;;
+;; given a string, seq of strings, seq of seqs of strings, etc
+;; it returns a seq of processed (downcased, de-punctuated, stoplisted) tokens
+;;
+(defmulti process-text
+  (fn [val] (cond (string? val) ::textstring       
+                  (coll? val) ::textcoll))
+  :default (fn [val] (println (str val))))
+
+(defmethod process-text ::textstring
+  [text] {:pre [(not (nil? *opennlp-tokenizer*))]}
+  (->> text *opennlp-tokenizer* (mapcat process-token)))  
+
+(defmethod process-text ::textcoll
+  [textseq] (mapcat process-text textseq))
+
 
 (defn count-tokens
-  "Return count map of processed tokens in text string"
-  [doctxt]
-  (-> doctxt process-text frequencies))
+  "Return count map of processed tokens"
+  [text]
+  (-> text process-text frequencies))
 
 ;;
 ;; Functions for loading the tokenizer and stoplist
