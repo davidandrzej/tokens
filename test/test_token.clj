@@ -1,57 +1,53 @@
 (ns test-token
-  (:use [clojure.test :only (deftest is are)])
+  (:use [clojure.test :only (testing deftest is are use-fixtures)])
   (:require [clojure.string :as str])
-  (:use [token :only (with-token process-text count-tokens
-                       *opennlp-tokenizer* get-tokenizer)]))
+  (:use [token :only (with-token process-text
+                       count-tokens *opennlp-stoplist*)]))
+                       
 
+(use-fixtures :once (fn [f] (with-token (f))))
 
 (def simple "foo-Bar BAZ the CaT!!")
 (def simpletoks ["foo" "bar" "baz" "cat"])
 (def simpletoksnostop ["foo" "bar" "baz" "the" "cat"])
 
-(deftest test-string
-  "Simple string"
-  (is (= (with-token (process-text simple))
-         simpletoks)))
-         
-(deftest test-nostoplist
-  "Simple string without stoplist"
-  (is (= (binding [*opennlp-tokenizer* (get-tokenizer)]
-           (process-text simple))
-         simpletoksnostop)))
+(deftest test-string-inputs
+  (testing "Simple string"
+    (is (= (process-text simple))
+        simpletoks))
+  (testing
+      "Simple string without stoplist"
+    (is (= (binding [*opennlp-stoplist* {}]
+             (process-text simple))
+           simpletoksnostop))))
 
-(deftest test-coll
-  "Simple collection with newline"
-  (is (= (with-token (process-text
-                      (str/join "   \n " [simple simple])))
-         (concat simpletoks simpletoks))))
-
-(deftest test-nesting
-  "Extreme collection nesting"
-  (is (= (with-token (process-text
-                      [[["Boat"] "moaT"] ["smotE"] "coat"
-                       ["throat"] "tote    rote"])
+(deftest test-collection-inputs
+  (testing "Simple collection with newline"  
+    (is (= (process-text
+            (str/join "   \n " [simple simple]))
+           (concat simpletoks simpletoks))))
+  (testing "Extreme collection nesting"
+    (is (= (process-text
+            [[["Boat"] "moaT"] ["smotE"] "coat"
+             ["throat"] "tote    rote"])
            ["boat" "moat" "smote" "coat" "throat" "tote" "rote"]))))
 
-(deftest test-empty-result
-  "Result has no tokens"
-  (is (empty? (with-token (process-text "and the of")))))
+(deftest test-bad-inputs
+  (testing "Bad input: int"
+    (is (thrown-with-msg? Throwable #"process-text called"
+          (process-text 1000))))
+  (testing "Bad input: int within collection"
+    (is (thrown-with-msg? Throwable #"process-text called"
+          (process-text ["foo bar buzz" 1000])))))
 
-(deftest test-empty-input
-  "Input is empty coll"
-  (is (empty? (with-token (process-text '())))))
+(deftest test-empty-results
+  (testing "Result has no tokens"  
+    (is (empty? (process-text "and the of"))))
+  (testing "Input is empty coll"
+    (is (empty? (process-text '())))))
 
 (deftest test-count
   "Count tokens"
-  (is (= (with-token (count-tokens "buzz buZZ bat cat"))
-         {"buzz" 2 "bat" 1 "cat" 1})))         
+  (is (= (count-tokens "buzz buZZ bat cat")
+         {"buzz" 2 "bat" 1 "cat" 1})))
 
-(deftest test-bad1
-  "non-string/collection input (just int)"
-  (is (thrown-with-msg? Throwable #"process-text called"
-        (with-token (process-text 1000)))))
-
-(deftest test-bad1
-  "non-string/collection input (collection with some strings)"
-  (is (thrown-with-msg? Throwable #"process-text called"
-        (with-token (process-text ["foo bar buzz" 1000])))))
