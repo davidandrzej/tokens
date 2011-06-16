@@ -40,12 +40,11 @@
 ;; process-text is the primary function
 ;;
 ;; given a string, seq of strings, seq of seqs of strings, etc
-;; it returns a seq of processed (downcased, de-punctuated, stoplisted) tokens
+;; returns a seq of processed (downcased, de-punctuated, stoplisted) toks
 ;;
 (defmulti process-text
   (fn [val] (cond (string? val) ::textstring       
-                  (coll? val) ::textcoll))
-  :default (fn [val] (println (str val))))
+                  (coll? val) ::textcoll)))
 
 (defmethod process-text ::textstring
   [text] {:pre [(not (nil? *opennlp-tokenizer*))]}
@@ -54,6 +53,10 @@
 (defmethod process-text ::textcoll
   [textseq] (mapcat process-text textseq))
 
+(defmethod process-text :default
+  [unknown]
+  (throw (Throwable. (format "process-text called on non-string/coll: %s"
+                             unknown))))
 
 (defn count-tokens
   "Return count map of processed tokens"

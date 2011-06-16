@@ -45,3 +45,13 @@
   "Count tokens"
   (is (= (with-token (count-tokens "buzz buZZ bat cat"))
          {"buzz" 2 "bat" 1 "cat" 1})))         
+
+(deftest test-bad1
+  "non-string/collection input (just int)"
+  (is (thrown-with-msg? Throwable #"process-text called"
+        (with-token (process-text 1000)))))
+
+(deftest test-bad1
+  "non-string/collection input (collection with some strings)"
+  (is (thrown-with-msg? Throwable #"process-text called"
+        (with-token (process-text ["foo bar buzz" 1000])))))
