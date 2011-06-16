@@ -28,6 +28,6 @@ collections of strings:
 
 ## License
 
-Copyright (C) 2011 David Andrzejewski (andrzejewski1@llnl.gov)
+Copyright (C) 2011 David Andrzejewski
 
 Distributed under the Eclipse Public License, the same as Clojure.
