@@ -44,7 +44,8 @@
 ;;
 (defmulti process-text
   (fn [val] (cond (string? val) ::textstring       
-                  (coll? val) ::textcoll)))
+                  (coll? val) ::textcoll
+                  (nil? val) ::textnil)))
 
 (defmethod process-text ::textstring
   [text] {:pre [(not (nil? *opennlp-tokenizer*))]}
@@ -52,6 +53,8 @@
 
 (defmethod process-text ::textcoll
   [textseq] (mapcat process-text textseq))
+
+(defmethod process-text ::textnil [_] '())  
 
 (defmethod process-text :default
   [unknown]

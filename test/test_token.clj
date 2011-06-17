@@ -43,6 +43,8 @@
 (deftest test-empty-results
   (testing "Result has no tokens"  
     (is (empty? (process-text "and the of"))))
+  (testing "Input is nil"  
+    (is (empty? (process-text nil))))
   (testing "Input is empty coll"
     (is (empty? (process-text '())))))
 
