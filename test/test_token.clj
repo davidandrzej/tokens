@@ -18,6 +18,7 @@
   (testing
       "Simple string without stoplist"
     (is (= (binding [*opennlp-stoplist* {}]
+             (println (str *opennlp-stoplist*))
              (process-text simple))
            simpletoksnostop))))
 

@@ -26,15 +26,14 @@
          
 (defn- accept-tok?
   "Is this a valid token?"
-  [stoplist tok]
+  [tok]
   (not (or (str/blank? tok)
-           (contains? stoplist tok))))
+           (contains? *opennlp-stoplist* tok))))
 
 (defn- process-token
   "Process a single token: de-punc, stop filter, downcase"
   [tok]
-  (->> tok str/lower-case de-punc
-       (filter (partial accept-tok? *opennlp-stoplist*))))
+  (->> tok str/lower-case de-punc (filter (bound-fn* accept-tok?))))
 
 ;;
 ;; process-text is the primary function
@@ -49,10 +48,10 @@
 
 (defmethod process-text ::textstring
   [text] {:pre [(not (nil? *opennlp-tokenizer*))]}
-  (->> text *opennlp-tokenizer* (mapcat process-token)))  
+  (->> text *opennlp-tokenizer* (mapcat (bound-fn* process-token))))  
 
 (defmethod process-text ::textcoll
-  [textseq] (mapcat process-text textseq))
+  [textseq] (mapcat (bound-fn* process-text) textseq))
 
 (defmethod process-text ::textnil [_] '())  
 
@@ -64,7 +63,7 @@
 (defn count-tokens
   "Return count map of processed tokens"
   [text]
-  (-> text process-text frequencies))
+  (->> text ((bound-fn* process-text)) frequencies))
 
 ;;
 ;; Functions for loading the tokenizer and stoplist
